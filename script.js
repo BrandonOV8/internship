@@ -36,3 +36,7 @@ function checkEvenOrOdd() {
       document.getElementById("result").innerText = "Please enter a valid number.";
   }
 }
+
+function redirecttoOddOrEven(){
+  window.location.href = "oddorEven.html"; 
+}
