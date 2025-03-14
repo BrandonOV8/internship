@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <title>Farmer vs Zombie Game</title>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            overflow: hidden;
+            color:white
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: url('./images/grass.jpg') no-repeat center center;
+            background-size: cover;
+        }
+
+        #score {
+            color: white;
+            padding: 10px;
+            border: 4px double yellow;
+            background: rgba(0, 0, 0, 0.7);
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+
+    <section class="container-fluid">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-1">
+            </div>
+            <div class="col-lg-8">
+                <h1>Farmer vs Zombies</h1>
+                <p>
+                    Farmer vs Zombies is an action-packed survival game where you play as a fearless farmer dodging relentless zombies. Armed with only your agility and a supply of ripe tomatoes, you must evade the undead and take them down one throw at a time. Can you outlast the zombie horde and defend your farm?
+                </p>
+
+            </div>
+            <div class="col-lg-1">
+            </div>
+        </div>
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-1">
+                <div id="score" class="ms-3">
+                    Score: 0
+                </div>
+            </div>
+            <div class="col-lg-10">
+                <canvas id="gameCanvas" width="720" height="480"></canvas>
+            </div>
+            <div class="col-lg-1">
+            </div>
+        </div>
+    </section>
+
+
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const keys = {};
+
+        // farmer properties
+        const farmer = {
+            x: canvas.width / 2 - 40,
+            y: canvas.height - 100,
+            width: 100,
+            height: 100,
+            speed: 7,
+            bullets: []
+        };
+
+        const farmerImg = new Image();
+        farmerImg.src = "https://purepng.com/public/uploads/large/purepng.com-farmeragriculturefarmerraw-materialsraising-field-cropslaborerclipartcartoon-1421526886903vjerk.png"; // Replace with actual farmer image URL
+
+        const bulletImg = new Image();
+        bulletImg.src = "https://purepng.com/public/uploads/large/purepng.com-red-tomatoestomatosalad-fruitred-fruittomatoes-1701527316192n3ycv.png";
+
+        const zombieImg = new Image();
+        zombieImg.src = "https://media1.giphy.com/media/lpsYPm3S4HmezfNMO6/giphy.gif?cid=6c09b952e0m0de4p3hvxgz61iyqy2c42rkdmvhsxoqvgkkns&ep=v1_stickers_search&rid=giphy.gif&ct=s";
+
+        const zombies = [];
+        let zombieSpawnInterval = 2000;
+        let lastzombieSpawn = Date.now();
+
+        const bulletSpeed = 10;
+
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if (e.code === 'Space') {
+                shootBullet();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        function shootBullet() {
+            farmer.bullets.push({
+                x: farmer.x + farmer.width / 2 - 5,
+                y: farmer.y,
+                width: 40,
+                height: 60
+            });
+        }
+
+        function spawnzombie() {
+            const size = Math.random() * 80 + 60;
+            zombies.push({
+                x: Math.random() * (canvas.width - size),
+                y: -size,
+                width: size,
+                height: size,
+                speed: Math.random() * 3 + 3
+            });
+        }
+
+        function isColliding(rect1, rect2) {
+            return !(rect2.x > rect1.x + rect1.width ||
+                rect2.x + rect2.width < rect1.x ||
+                rect2.y > rect1.y + rect1.height ||
+                rect2.y + rect2.height < rect1.y);
+        }
+
+        function update() {
+            if (keys['KeyA'] && farmer.x > 0) {
+                farmer.x -= farmer.speed;
+            }
+            if (keys['KeyD'] && farmer.x + farmer.width < canvas.width) {
+                farmer.x += farmer.speed;
+            }
+            if (keys['KeyW'] && farmer.y > 0) {
+                farmer.y -= farmer.speed;
+            }
+            if (keys['KeyS'] && farmer.y + farmer.height < canvas.height) {
+                farmer.y += farmer.speed;
+            }
+
+            for (let i = farmer.bullets.length - 1; i >= 0; i--) {
+                const bullet = farmer.bullets[i];
+                bullet.y -= bulletSpeed;
+                if (bullet.y < -bullet.height) {
+                    farmer.bullets.splice(i, 1);
+                }
+            }
+
+            if (Date.now() - lastzombieSpawn > zombieSpawnInterval) {
+                spawnzombie();
+                lastzombieSpawn = Date.now();
+            }
+
+            for (let i = zombies.length - 1; i >= 0; i--) {
+                const zombie = zombies[i];
+                zombie.y += zombie.speed;
+                if (zombie.y > canvas.height) {
+                    zombies.splice(i, 1);
+                }
+            }
+
+            for (let i = zombies.length - 1; i >= 0; i--) {
+                for (let j = farmer.bullets.length - 1; j >= 0; j--) {
+                    if (isColliding(zombies[i], farmer.bullets[j])) {
+                        zombies.splice(i, 1);
+                        farmer.bullets.splice(j, 1);
+                        break;
+                    }
+                }
+            }
+
+            for (let i = 0; i < zombies.length; i++) {
+                if (isColliding(farmer, zombies[i])) {
+                    alert("Game Over!");
+                    document.location.reload();
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(farmerImg, farmer.x, farmer.y, farmer.width, farmer.height);
+
+            for (const bullet of farmer.bullets) {
+                ctx.drawImage(bulletImg, bullet.x, bullet.y, bullet.width, bullet.height);
+            }
+
+            for (const zombie of zombies) {
+                ctx.drawImage(zombieImg, zombie.x, zombie.y, zombie.width, zombie.height);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        requestAnimationFrame(gameLoop);
+    </script>
+    <script>
+        // ======= Score-Keeping Snippet (no edits to original JS) =======
+
+        // 1. Create a global score variable:
+        let score = 0;
+
+        // 2. Preserve the original collision function (isColliding)
+        //    so we can call it inside our new function.
+        const originalIsColliding = window.isColliding;
+
+        // 3. Override window.isColliding with our custom logic:
+        window.isColliding = function (rect1, rect2) {
+            // Check collision using the original function
+            const collided = originalIsColliding(rect1, rect2);
+
+            // If there's a collision, check if it's a bullet-zombie scenario:
+            //  - The existing code draws bullets at width ~5 or so
+            //  - zombies can be width 20-50, so we do a simple size check
+            if (collided) {
+                const isBullet = rect1.width <= 60 || rect2.width <= 60;    // bullet is small
+                const iszombie = rect1.width >= 80 || rect2.width >= 80;   // zombie is bigger
+
+                if (isBullet && iszombie) {
+                    score++;
+                    console.log("Score:", score);
+                    // Optionally, display the score on-screen in a DOM element:
+                     const scoreDisplay = document.getElementById("score");
+                     if (scoreDisplay) scoreDisplay.textContent = "Score: " + score;
+                }
+            }
+
+            return collided;
+        };
+    </script>
+</body>
+</html>
